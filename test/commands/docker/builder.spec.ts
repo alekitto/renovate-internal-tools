@@ -321,4 +321,20 @@ describe('commands/docker/builder', () => {
 
     await expect(run()).rejects.toThrow('missing-config');
   });
+
+  it('multiplatform build-only', async () => {
+    datasources.getPkgReleases.mockResolvedValueOnce({
+      releases: [{ version }, { version: '2.0.0-rc.24' }],
+    });
+
+    args = {
+      ...args,
+      platforms: ['linux/amd64', 'linux/arm64'],
+    };
+
+    await run();
+
+    expect(docker.build.mock.calls).toMatchSnapshot('build');
+    expect(docker.publish.mock.calls).toMatchSnapshot('publish');
+  });
 });
