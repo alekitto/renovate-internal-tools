@@ -8,7 +8,12 @@ import { BuildsResult, addHostRule, getBuildList } from '../../utils/builds';
 import { readDockerConfig } from '../../utils/config';
 import { build, publish } from '../../utils/docker';
 import { init } from '../../utils/docker/buildx';
-import { dockerDf, dockerPrune, dockerTag } from '../../utils/docker/common';
+import {
+  docker,
+  dockerDf,
+  dockerPrune,
+  dockerTag,
+} from '../../utils/docker/common';
 import log from '../../utils/logger';
 import type { Config, ConfigFile } from '../../utils/types';
 
@@ -33,6 +38,7 @@ async function buildAndPush(
     versioning,
     majorMinor,
     prune,
+    platforms,
   }: Config,
   tobuild: BuildsResult
 ): Promise<void> {
@@ -106,16 +112,35 @@ async function buildAndPush(
         cacheTags,
         buildArgs: [...(buildArgs ?? []), `${buildArg}=${version}`],
         dryRun,
+        platforms,
       });
 
-      if (!buildOnly) {
-        await publish({ image, imagePrefix, tag, dryRun });
-        const source = tag;
+      const MultiPlatform: boolean =
+        !is.nullOrUndefined(platforms) && platforms.length > 1;
 
-        for (const tag of tags) {
-          log(`Publish ${source} as ${tag}`);
-          await dockerTag({ image, imagePrefix, src: source, tgt: tag });
+      if (!buildOnly) {
+        if (MultiPlatform) {
+          const source = tag;
+          for (const tag of tags) {
+            log(`Publish ${source} as ${tag}`);
+            await docker(
+              'buildx',
+              'imagetools',
+              'create',
+              '-t',
+              `${imagePrefix}/${image}:${tag}`,
+              `${imagePrefix}/${image}:${source}`
+            );
+          }
+        } else {
           await publish({ image, imagePrefix, tag, dryRun });
+          const source = tag;
+
+          for (const tag of tags) {
+            log(`Publish ${source} as ${tag}`);
+            await dockerTag({ image, imagePrefix, src: source, tgt: tag });
+            await publish({ image, imagePrefix, tag, dryRun });
+          }
         }
       }
 
@@ -192,6 +217,7 @@ export async function run(): Promise<void> {
     majorMinor: getArg('major-minor') !== 'false',
     prune: getArg('prune') === 'true',
     versioning: cfg.versioning ?? getDefaultVersioning(cfg.datasource),
+    platforms: getArg('platforms', { multi: true }),
   };
 
   if (dryRun) {

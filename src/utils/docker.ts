@@ -137,6 +137,7 @@ export type BuildOptions = {
   tag?: string;
   dryRun?: boolean;
   buildArgs?: string[];
+  platforms?: string[];
 };
 
 const errors = [
@@ -157,16 +158,25 @@ export async function build({
   tag = 'latest',
   dryRun,
   buildArgs,
+  platforms,
 }: BuildOptions): Promise<void> {
-  const args = [
-    'buildx',
-    'build',
-    '--load',
-    `--tag=${imagePrefix}/${image}:${tag}`,
-  ];
+  const MultiPlatform: boolean =
+    !is.nullOrUndefined(platforms) && platforms.length > 1;
+
+  const args = ['buildx', 'build', `--tag=${imagePrefix}/${image}:${tag}`];
+
+  if (!MultiPlatform) {
+    args.push('--load');
+  } else if (!dryRun) {
+    args.push('--push');
+  }
 
   if (is.nonEmptyArray(buildArgs)) {
     args.push(...buildArgs.map((b) => `--build-arg=${b}`));
+  }
+
+  if (is.array(platforms)) {
+    args.push(...platforms.map((p) => `--platform=${p}`));
   }
 
   if (is.string(cache)) {
