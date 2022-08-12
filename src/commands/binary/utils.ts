@@ -65,6 +65,10 @@ export async function createBuilderImage(
 
 export async function runBuilder(ws: string, version: string): Promise<void> {
   const args = ['--name', 'builder', '--volume', `${ws}/.cache:/cache`];
+  if (process.env.KUBERNETES_SERVICE_HOST) {
+    args.push('--network', 'host');
+  }
+
   const arch = getArch();
   if (is.nonEmptyString(arch)) {
     args.push('--platform', DockerPlatform[arch]);

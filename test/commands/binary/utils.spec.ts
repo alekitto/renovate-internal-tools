@@ -81,5 +81,17 @@ describe('commands/binary/utils', () => {
       expect(docker.dockerRun).toHaveBeenCalledTimes(1);
       expect(docker.dockerRun.mock.calls).toMatchSnapshot();
     });
+
+    it('works in kubernetes', async () => {
+      process.env.KUBERNETES_SERVICE_HOST = '1';
+      try {
+        await runBuilder('.', '1.2.3');
+
+        expect(docker.dockerRun).toHaveBeenCalledTimes(1);
+        expect(docker.dockerRun.mock.calls).toMatchSnapshot();
+      } finally {
+        delete process.env.KUBERNETES_SERVICE_HOST;
+      }
+    });
   });
 });
