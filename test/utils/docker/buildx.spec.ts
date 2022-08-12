@@ -22,6 +22,22 @@ describe('utils/docker/buildx', () => {
     expect(utils.exec.mock.calls).toMatchSnapshot();
   });
 
+  it('works in kube cluster', async () => {
+    process.env.KUBERNETES_SERVICE_HOST = '1';
+    try {
+      utils.exec.mockResolvedValueOnce({
+        code: 0,
+        stdout:
+          'NAME/NODE           DRIVER/ENDPOINT                STATUS   PLATFORMS\n',
+        stderr: '',
+      });
+      await init();
+      expect(utils.exec.mock.calls).toMatchSnapshot();
+    } finally {
+      delete process.env.KUBERNETES_SERVICE_HOST;
+    }
+  });
+
   it('already initialized', async () => {
     utils.exec.mockResolvedValueOnce({
       code: 0,
