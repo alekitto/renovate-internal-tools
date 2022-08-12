@@ -71,6 +71,21 @@ Object {
 }
 `;
 
+exports[`commands/binary/utils runBuilder works in kubernetes 1`] = `
+Array [
+  Array [
+    "--name",
+    "builder",
+    "--volume",
+    "./.cache:/cache",
+    "--network",
+    "host",
+    "builder",
+    "1.2.3",
+  ],
+]
+`;
+
 exports[`commands/binary/utils runBuilder works with build args 1`] = `
 Array [
   Array [
