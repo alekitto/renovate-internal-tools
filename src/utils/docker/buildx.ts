@@ -29,7 +29,7 @@ export async function init(): Promise<void> {
     '--name',
     'renovatebot-builder',
     '--driver',
-    'docker-container',
+    process.env.KUBERNETES_SERVICE_HOST ? 'kubernetes' : 'docker-container',
     '--use'
   );
 
